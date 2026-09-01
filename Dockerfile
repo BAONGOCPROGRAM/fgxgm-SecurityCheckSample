@@ -1,13 +1,18 @@
-FROM node:18.17.1
+FROM node:24.18.1-alpine3.23 AS build
 
-RUN npm install -g npm@9.1.3
+WORKDIR /app
 
-ADD package.json .
-ADD index.js .
-ADD build .
-COPY . .
-RUN npm install
+COPY server/package*.json ./
+RUN npm ci --omit=dev
 
-EXPOSE 8080
+COPY server/index.js ./
 
-CMD [ "node", "index.js" ]
+FROM gcr.io/distroless/nodejs24-debian13:nonroot
+
+WORKDIR /app
+
+COPY --from=build --chown=nonroot:nonroot /app ./
+
+EXPOSE 8090
+
+CMD ["index.js"]
